@@ -3,11 +3,11 @@ from gtts import gTTS
 # from db import Database
 import tgcrypto, logging, time
 
-api_id = 24073458
-api_hash = "717a1a4a14165bd46f9e066ee639a63f"
+api_id = 
+api_hash = 
 
 app = Client("my_app", api_id=api_id, api_hash=api_hash)
-chat_id = [906893530]
+chat_id = []
 muts = []
 
 logging.basicConfig(level=logging.INFO)
