@@ -5,7 +5,7 @@ import datetime
 import telebot
 # import os
 
-API_KEY = ("7029511856:AAH_YMF2yt1fqKuDjFDx9XsMTvK8rVYJ8dE")
+API_KEY = ("")
 bot = telebot.TeleBot(API_KEY)
 
 WEATHER_API_KEY = ("7e3d9152a07b807c5986942d9d505e2c")
