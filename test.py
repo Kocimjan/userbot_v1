@@ -8,7 +8,7 @@ import telebot
 API_KEY = ("")
 bot = telebot.TeleBot(API_KEY)
 
-WEATHER_API_KEY = ("7e3d9152a07b807c5986942d9d505e2c")
+WEATHER_API_KEY = ""
 
 def get_weather_data(city):
     url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&units=metric&appid={WEATHER_API_KEY}&lang=ru"
