@@ -4,7 +4,7 @@ from config import tg_api_id, tg_api_hash
 from function import gpt_response, get_weather
 
 # Инициализация клиента
-app = Client("userbot", api_id=tg_api_id, api_hash=tg_api_hash)
+app = Client("mybot", api_id=tg_api_id, api_hash=tg_api_hash)
 
 # Список chat_id, которые нужно фильтровать
 allowed_chat_ids = [906893530, 1008114300, 5547028370, 6690844057]  # Замените на свои chat.id
@@ -20,6 +20,7 @@ def chat_filter(_, __, message):
 async def weather_handler(client, message):
     if len(message.text.split(' ')) > 1:
         city = message.text.split(' ')[1]
+        print(city)
         await get_weather(message, city=city)
     else:
         await message.reply_text('Не указан город', quote=True)
@@ -36,4 +37,5 @@ async def gpt_handler(client, message):
     await message.reply(gpt_response(message), quote=True)
 
 
+print('sss')
 app.run()  # Корректный запуск бота

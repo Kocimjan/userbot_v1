@@ -25,3 +25,4 @@ def gpt_response(message):
         messages=[{"role": "user", "content": user_request}],
     )
 
+
