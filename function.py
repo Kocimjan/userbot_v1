@@ -1,6 +1,11 @@
 import requests
-import g4f
+from g4f.client import Client
 from config import weather_api_key
+from collections import defaultdict
+
+
+client = Client()
+user_messages = defaultdict(list)
 
 
 async def get_weather(message, api_key=weather_api_key, city='Худжанд'):
@@ -12,17 +17,36 @@ async def get_weather(message, api_key=weather_api_key, city='Худжанд'):
         temperature = weather_data['main']['temp']
         description = weather_data['weather'][0]['description']
         return await message.reply_text(f'Погода в городе {city}: {description}, Температура: {temperature}°C, '
-                                 f'Скорость ветра:{wind_speed}/с', quote=True)
+                                        f'Скорость ветра:{wind_speed}/с', quote=True)
     else:
         return await message.reply_text('Ошибка при получении данных о погоде', response_weather, quote=True)
 
 
-def gpt_response(message):
-    user_request = message.text
-    return g4f.ChatCompletion.create(
-        model="gpt-4o-mini",
-        provider=g4f.Provider.ChatgptFree,
-        messages=[{"role": "user", "content": user_request}],
+def gpt_response2(message) -> str:
+    user_messages[message.from_user.id].append(message.text)
+    print(user_messages)
+    chat_completion = client.chat.completions.create(model="gpt-4o",
+                                                     messages=[{"role": "user",
+                                                                "content": "Какая ты модель?"}],
+                                                     )
+    return chat_completion.choices[0].message.content or ""
+
+
+def gpt_response(message) -> str:
+    user_id = message.from_user.id
+
+    user_messages[user_id].append({"role": "user", "content": message.text})
+
+    if len(user_messages[user_id]) > 1:
+        user_messages[user_id].append({"role": "assistant", "content": user_messages[user_id][-1]["content"]})
+
+    chat_completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=user_messages[user_id]
     )
 
+    gpt_reply = chat_completion.choices[0].message.content or ''
 
+    user_messages[user_id].append({"role": "assistant", "content": gpt_reply})
+
+    return gpt_reply

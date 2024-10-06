@@ -1,7 +1,7 @@
 # main.py
 from pyrogram import Client, filters
 from config import tg_api_id, tg_api_hash
-from function import gpt_response, get_weather
+from function import gpt_response, get_weather, user_messages
 
 # Инициализация клиента
 app = Client("mybot", api_id=tg_api_id, api_hash=tg_api_hash)
@@ -29,11 +29,12 @@ async def weather_handler(client, message):
 # Обработчик для команды "гпт"
 @app.on_message(filters.command("гпт", prefixes=".") & chat_filter)
 async def gpt_handler(client, message):
-    await message.reply("Жди", quote=True)
-    try:
-        print(message.chat.id, message.text)
-    except Exception as e:
-        print(f'Ошибка: {e}')
+    if len(message.text.split(' ')) <= 1:
+        return await message.reply_text('Укажите запрос', quote=True)
+    else:
+        print(message.from_user.id, message.text)
+    if message.from_user.id not in user_messages:
+        user_messages[message.from_user.id] = []
     await message.reply(gpt_response(message), quote=True)
 
 
