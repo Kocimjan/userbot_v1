@@ -2,7 +2,8 @@ import os
 
 
 def get_env_variables():
-    Проверка и получение переменных окружения
+
+    #Проверка и получение переменных окружения
     tg_api_id = os.getenv('tg_api_id')
     tg_api_hash = os.getenv('tg_api_hash')
     weather_api_key = os.getenv('weather_api_key')
