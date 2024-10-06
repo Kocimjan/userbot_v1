@@ -32,21 +32,16 @@ def gpt_response2(message) -> str:
     return chat_completion.choices[0].message.content or ""
 
 
-def gpt_response(message) -> str:
+def gpt_response(message, text) -> str:
     user_id = message.from_user.id
-
-    user_messages[user_id].append({"role": "user", "content": message.text})
-
+    user_messages[user_id].append({"role": "user", "content": text})
     if len(user_messages[user_id]) > 1:
         user_messages[user_id].append({"role": "assistant", "content": user_messages[user_id][-1]["content"]})
-
     chat_completion = client.chat.completions.create(
         model="gpt-4o",
         messages=user_messages[user_id]
     )
-
     gpt_reply = chat_completion.choices[0].message.content or ''
-
     user_messages[user_id].append({"role": "assistant", "content": gpt_reply})
-
+    print(user_messages)
     return gpt_reply
