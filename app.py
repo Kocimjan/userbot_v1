@@ -4,7 +4,7 @@ from config import tg_api_id, tg_api_hash
 from function import gpt_response, get_weather, user_messages
 
 # Инициализация клиента
-app = Client("myboter", api_id=tg_api_id, api_hash=tg_api_hash)
+app = Client("mybot", api_id=tg_api_id, api_hash=tg_api_hash)
 
 # Список user_id, которые нужно фильтровать
 allowed_user_ids = [906893530, 1008114300, 5547028370, 6690844057]  # Замените на свои chat.id
