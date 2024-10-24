@@ -38,7 +38,6 @@ def g4f_response(text) -> str:
     return gpt_reply
 
 
-
 def meta_response(text) -> str:
     response = client_openai.chat.completions.create(
         model='Meta-Llama-3.1-70B-Instruct',
@@ -50,6 +49,7 @@ def meta_response(text) -> str:
     meta_reply = response.choices[0].message.content
     print(meta_reply)
     return meta_reply
+
 
 def gemini_response(text):
     response = model.generate_content(text)
