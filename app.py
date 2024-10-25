@@ -1,6 +1,6 @@
 from pyrogram import Client, filters
 from config import tg_api_id, tg_api_hash
-from function import translate_to_russian, with_reply, user_choise, meta_response, g4f_response, gemini_response
+from function import with_reply, user_choise, meta_response, g4f_response, gemini_response
 import requests
 import io
 
@@ -20,12 +20,10 @@ def chat_filter(_, __, message):
 @app.on_message(filters.command("гпт", prefixes="."))
 async def gpt_handler(_, message):
     user_id = message.from_user.id
-    us = user_choise[user_id]
+    us = user_choise[user_id] = 'meta'
     req_text = message.text.split(".гпт ", maxsplit=1)[1]
     if len(message.text.split(' ')) <= 1:
         return await message.reply_text('Укажите запрос', quote=True)
-    else:
-        print(message.from_user.id, message.text)
     msg = await message.reply('Генерация...')
     if us == 'meta': 
         await message.reply(meta_response(message.text))
@@ -33,7 +31,7 @@ async def gpt_handler(_, message):
         await message.reply(gemini_response(message.text))
     elif us == 'g4f':
         await message.reply(g4f_response(message.text))
-    await message.reply(g4f_response(req_text), quote=True)
+    # await message.reply(g4f_response(req_text), quote=True)
     await app.delete_messages(msg.chat.id, msg.id)
 
 
@@ -81,15 +79,6 @@ async def handle_sq_command(client, message):
         await message.reply("❗️ Ошибка при создании цитаты.")
 
 
-@app.on_message(filters.text & chat_filter)
-async def clear_user_history(_, message):
-    if message.text == 'Перевод':
-        if message.reply_to_message:
-            # Это сообщение является ответом на другое сообщение
-            original_message = message.reply_to_message.text
-            print(original_message)
-            await message.reply_text(translate_to_russian(original_message))
-
-
+print('starting')
 # Запуск обработки сообщений
 app.run()

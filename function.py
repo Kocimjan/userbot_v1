@@ -1,10 +1,9 @@
 from g4f import Provider, ChatCompletion, models
 import google.generativeai as genai
-from googletrans import Translator
 import openai
 
+
 # Инициализация переводчика
-translator = Translator()
 user_choise = {}
 
 
@@ -15,17 +14,6 @@ client_openai = openai.OpenAI(
     api_key="542312c2-dbb0-4af4-a7bf-bf007c97a61c",
     base_url="https://api.sambanova.ai/v1",
 )
-
-
-def translate_to_russian(text) -> str:
-    # Автоматическое определение исходного языка и перевод на русский
-    try:
-        result = translator.translate(text, dest='ru')
-        source_lang = result.src  # Определённый исходный язык
-        translated_text = result.text  # Переведённый текст
-        return f"Исходный язык: {source_lang}\nПеревод: {translated_text}"
-    except Exception as e:
-        return f"Ошибка при переводе: {e}"
 
 
 def g4f_response(text) -> str:
@@ -40,7 +28,7 @@ def g4f_response(text) -> str:
 
 def meta_response(text) -> str:
     response = client_openai.chat.completions.create(
-        model='Meta-Llama-3.1-70B-Instruct',
+        model='Meta-Llama-3.1-8B-Instruct',
         messages=[{"role": "user", "content": text}],
         temperature=0.1,
         top_p=0.1
