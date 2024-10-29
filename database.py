@@ -1,87 +1,89 @@
-
-import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-import logging
-import configparser
-from contextlib import asynccontextmanager
-from sqlalchemy.exc import SQLAlchemyError
-
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import sqlite3
+from typing import List, Tuple, Dict
 
 
-class Database:
-    def __init__(self, config_file: str):
-        self.config_file = config_file
-        self.engine = None
-        self.async_session = None
+class SQLiteDB:
+    def __init__(self, db_name: str):
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
 
-    def _read_config(self):
-        """Чтение файла конфигурации"""
-        config = configparser.ConfigParser()
-        config.read(self.config_file)
-        return config['database']
+    def create_table(self, table_name: str, columns: Dict[str, str]):
+        """
+        Создает таблицу в базе данных.
 
-    def init_engine(self):
-        """Инициализация асинхронного движка с пулом подключений"""
-        config = self._read_config()
-        self.engine = create_async_engine(
-            f"postgresql+asyncpg://{config['DB_USER']}:{config['DB_PASSWORD']}@{config['DB_HOST']}:{config['DB_PORT']}/{config['DB_NAME']}",
-            echo=True,  # Включить логирование SQL-запросов
-            pool_size=int(config.get('POOL_SIZE', 10)),  # Размер пула
-            max_overflow=int(config.get('MAX_OVERFLOW', 20))  # Максимальное количество дополнительных подключений
-        )
-        self.async_session = sessionmaker(
-            bind=self.engine,
-            class_=AsyncSession,
-            expire_on_commit=False
-        )
+        Args:
+            table_name (str): Имя таблицы.
+            columns (Dict[str, str]): Словарь с именами столбцов и их типами.
+        """
+        column_str = ', '.join(f'{key} {value}' for key, value in columns.items())
+        query = f'CREATE TABLE {table_name} ({column_str})'
+        self.cursor.execute(query)
+        self.conn.commit()
 
-    @asynccontextmanager
-    async def get_session(self):
-        """Получение сессии для работы с базой данных"""
-        async with self.async_session() as session:
-            try:
-                yield session
-            except SQLAlchemyError as e:
-                logger.error(f"Ошибка базы данных: {e}")
-                raise
+    def insert_data(self, table_name: str, data: Dict[str, str]):
+        """
+        Вставляет данные в таблицу.
 
-    async def execute(self, query: str, *args):
-        """Выполнение SQL-запросов (INSERT, UPDATE, DELETE)"""
-        async with self.get_session() as session:
-            try:
-                await session.execute(query, args)
-                await session.commit()  # Подтверждение изменений
-                logger.info(f"Запрос выполнен: {query}")
-            except SQLAlchemyError as e:
-                await session.rollback()
-                logger.error(f"Ошибка выполнения запроса: {e}")
-                raise
+        Args:
+            table_name (str): Имя таблицы.
+            data (Dict[str, str]): Словарь с данными для вставки.
+        """
+        column_str = ', '.join(data.keys())
+        value_str = ', '.join(f'"{value}"' for value in data.values())
+        query = f'INSERT INTO {table_name} ({column_str}) VALUES ({value_str})'
+        self.cursor.execute(query)
+        self.conn.commit()
 
-    async def fetch(self, query: str, *args):
-        """Выполнение SELECT-запроса и возврат результата"""
-        async with self.get_session() as session:
-            try:
-                result = await session.execute(query, args)
-                return result.fetchall()  # Получение всех строк
-            except SQLAlchemyError as e:
-                logger.error(f"Ошибка выполнения запроса: {e}")
-                raise
+    def select_data(self, table_name: str, columns: List[str], conditions: List[Tuple[str, str]] = None):
+        """
+        Выполняет запрос SELECT к таблице.
 
-    async def fetchrow(self, query: str, *args):
-        """Выполнение SELECT-запроса и возврат одной строки"""
-        async with self.get_session() as session:
-            try:
-                result = await session.execute(query, args)
-                return result.fetchone()  # Получение одной строки
-            except SQLAlchemyError as e:
-                logger.error(f"Ошибка выполнения запроса: {e}")
-                raise
+        Args:
+            table_name (str): Имя таблицы.
+            columns (List[str]): Список имен столбцов для выборки.
+            conditions (List[Tuple[str, str]], optional): Список условий для фильтрации данных. Defaults to None.
 
-    async def close(self):
-        """Закрытие движка и пула подключений"""
-        await self.engine.dispose()
-        logger.info("Подключение к базе данных закрыто")
+        Returns:
+            List[Tuple]: Список кортежей с данными.
+        """
+        column_str = ', '.join(columns)
+        query = f'SELECT {column_str} FROM {table_name}'
+        if conditions:
+            condition_str = ' AND '.join(f'{key} = "{value}"' for key, value in conditions)
+            query += f' WHERE {condition_str}'
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+    def update_data(self, table_name: str, data: Dict[str, str], conditions: List[Tuple[str, str]]):
+        """
+        Обновляет данные в таблице.
+
+        Args:
+            table_name (str): Имя таблицы.
+            data (Dict[str, str]): Словарь с данными для обновления.
+            conditions (List[Tuple[str, str]]): Список условий для фильтрации данных.
+        """
+        set_str = ', '.join(f'{key} = "{value}"' for key, value in data.items())
+        condition_str = ' AND '.join(f'{key} = "{value}"' for key, value in conditions)
+        query = f'UPDATE {table_name} SET {set_str} WHERE {condition_str}'
+        self.cursor.execute(query)
+        self.conn.commit()
+
+    def delete_data(self, table_name: str, conditions: List[Tuple[str, str]]):
+        """
+        Удаляет данные из таблицы.
+
+        Args:
+            table_name (str): Имя таблицы.
+            conditions (List[Tuple[str, str]]): Список условий для фильтрации данных.
+        """
+        condition_str = ' AND '.join(f'{key} = "{value}"' for key, value in conditions)
+        query = f'DELETE FROM {table_name} WHERE {condition_str}'
+        self.cursor.execute(query)
+        self.conn.commit()
+
+    def close(self):
+        """
+        Закрывает соединение с базой данных.
+        """
+        self.conn.close()
