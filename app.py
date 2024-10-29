@@ -4,6 +4,7 @@ from function import with_reply, user_choise, meta_response, g4f_response, gemin
 import requests
 import io
 
+
 # Инициализация клиента
 app = Client("myboter", api_id=tg_api_id, api_hash=tg_api_hash)
 

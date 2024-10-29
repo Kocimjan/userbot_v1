@@ -1,17 +1,21 @@
 from g4f import Provider, ChatCompletion, models
+from config import genai_api, meta_api
 import google.generativeai as genai
 import openai
+from database import SQLiteDB
 
 
 # Инициализация переводчика
 user_choise = {}
 
+db = SQLiteDB('userbot.db')
 
-genai.configure(api_key='')
+
+genai.configure(api_key=genai_api)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 client_openai = openai.OpenAI(
-    api_key="",
+    api_key=meta_api,
     base_url="https://api.sambanova.ai/v1",
 )
 
