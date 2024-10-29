@@ -11,7 +11,7 @@ genai.configure(api_key='')
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 client_openai = openai.OpenAI(
-    api_key="542312c2-dbb0-4af4-a7bf-bf007c97a61c",
+    api_key="",
     base_url="https://api.sambanova.ai/v1",
 )
 
