@@ -7,7 +7,7 @@ import openai
 user_choise = {}
 
 
-genai.configure(api_key='AIzaSyCUaRs9G3r-Qx7uGoV0EXFSVaolqQbkQoo')
+genai.configure(api_key='')
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 client_openai = openai.OpenAI(
