@@ -18,3 +18,6 @@ def get_env_variables():
 
 # Пример вызова функции
 tg_api_id, tg_api_hash = get_env_variables()
+AUTOREPLY_MESSAGE = "Здравствуйте! Я сейчас не могу ответить на ваше сообщение. Пожалуйста, подождите немного."
+last_reply_times = {}
+REPLY_INTERVAL = 3600
