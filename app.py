@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from function import with_reply, g4f_response
+from function import with_reply, gemini_response
 import logging
 import configparser
 from ipaddress import ip_address
@@ -15,7 +15,6 @@ API_HASH = config.get('pyrogram', 'API_HASH')
 SESSION_NAME = config.get('pyrogram', 'SESSION_NAME')
 SYSTEM_PROMPT = config.get('g4f', 'SYSTEM_PROMPT')
 
-print(SYSTEM_PROMPT)
 
 DOWNLOAD_PATH = "downloads"
 PATTERN = re.compile(r"Устройство: (.+?);.*?IP: (\d+\.\d+\.\d+\.\d+);")
@@ -67,12 +66,11 @@ async def id_handler(_, message):
 
 @app.on_message(filters.command("гпт", prefixes="."))
 async def gpt_handler(_, message):
-    user_id = message.from_user.id
     req_text = message.text.split(".гпт ", maxsplit=1)[1]
     if len(message.text.split(' ')) <= 1:
         return await message.reply_text('Укажите запрос', quote=True)
     msg = await message.reply('Генерация...')
-    await message.reply(g4f_response(req_text), quote=True)
+    await message.reply(gemini_response(req_text), quote=True)
     await app.delete_messages(msg.chat.id, msg.id)
 
 
@@ -81,11 +79,11 @@ async def message_handler(_, message):
     try:
         username = message.from_user.username if message.from_user.username else 'Неизвестный пользователь'
         message_text = message.text if message.text else '[Нет текста]'
-        await print(f'Новое сообщение от {username}: {message_text}')
+        print(f'Новое сообщение от {username}: {message_text}')
         text = message.text.lower()
-
-        with await open('userbot_log.txt', 'a', encoding='utf-8') as f:
-            f.write(f'{username}: {message_text}\n')
+        
+        with open('userbot_log.txt', 'a', encoding='utf-8') as f:
+            f.write(f'{username}: {message_text} datetime:{message.date}\n')
 
         if message.text.startswith('/start'):
             await message.reply_text('👋 Привет! Тута')
@@ -93,15 +91,9 @@ async def message_handler(_, message):
         else:
             if 'привет' in text:
                 await message.reply_text('Привет! Как дела? 😊')
-            elif 'как дела' in text:
-                await message.reply_text('У меня всё отлично! А у вас?')
-            elif 'салом' in text:
-                await message.reply_text('Салом алейкум')
-            elif 'дурустми' in text:
-                await message.reply_text('Нагз Рахмат')
 
     except Exception as e:
-        await print(f'❌ Произошла ошибка: {e}')
+        print(f'❌ Произошла ошибка: {e}')
 
 
 @app.on_message(filters.text & user_filter) 
