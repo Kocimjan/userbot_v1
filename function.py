@@ -1,53 +1,51 @@
-from g4f import Provider, ChatCompletion, models
-import google.generativeai as genai
-import openai
+import google as genai
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+SYSTEM_PROMPT = config.get('g4f', 'SYSTEM_PROMPT')
+
+client = genai.Client(api_key="AIzaSyCUaRs9G3r-Qx7uGoV0EXFSVaolqQbkQoo")
 
 
-# Инициализация переводчика
-user_choise = {}
+def gemini_response(user_input):
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[user_input])
+    return response.text
+  
+  
+  
+# Create the model
+generation_config = {
+  "temperature": 1,
+  "top_p": 0.95,
+  "top_k": 40,
+  "max_output_tokens": 8192,
+  "response_mime_type": "text/plain",
+}
 
+model = genai.GenerativeModel(
+  model_name="gemini-2.0-flash",
+  generation_config=generation_config,
+  system_instruction=SYSTEM_PROMPT,
+)
 
-genai.configure(api_key='')
-model = genai.GenerativeModel("gemini-1.5-flash")
-
-client_openai = openai.OpenAI(
-    api_key="",
-    base_url="https://api.sambanova.ai/v1",
+chat_session = model.start_chat(
+  history=[
+  ]
 )
 
 
-def g4f_response(text) -> str:
-    gpt_reply = ChatCompletion.create(
-        model='gpt-35-turbo',
-        provider=Provider.TeachAnything,
-        messages=[{"role": "user", "content": text}]
-    )
-    print(gpt_reply)
-    return gpt_reply
-
-
-def meta_response(text) -> str:
-    response = client_openai.chat.completions.create(
-        model='Meta-Llama-3.1-8B-Instruct',
-        messages=[{"role": "user", "content": text}],
-        temperature=0.1,
-        top_p=0.1
-    )
-    
-    meta_reply = response.choices[0].message.content
-    print(meta_reply)
-    return meta_reply
-
-
-def gemini_response(text):
-    response = model.generate_content(text)
+def gemini_response_chat(user_input):
+    response = chat_session.send_message(user_input)
     return response.text
 
 
 def with_reply(func):
     async def wrapped(client, message):
         if not message.reply_to_message:
-            await message.edit("<b>Reply to message is required</b>")
+            await message.edit("<b>Требуется ответить на сообщение.</b>")
         else:
             return await func(client, message)
 
