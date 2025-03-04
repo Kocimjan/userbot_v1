@@ -1,29 +1,15 @@
 from pyrogram import Client, filters
-from function import with_reply, gemini_response
-import logging
-import configparser
-from ipaddress import ip_address
-import re
+from config import tg_api_id, tg_api_hash
+from function import with_reply, user_choise, meta_response, g4f_response, gemini_response
+import requests
+import io
 
+# Инициализация клиента
+app = Client("myboter", api_id=tg_api_id, api_hash=tg_api_hash)
 
-# === Чтение параметров подключения из файла config.ini ===
-config = configparser.ConfigParser()
-config.read('config.ini')
+# Список user_id, которые нужно фильтровать
+allowed_user_ids = [906893530, 1008114300, 5547028370, 6690844057]  # Замените на свои chat.id
 
-API_ID = config.get('pyrogram', 'API_ID')
-API_HASH = config.get('pyrogram', 'API_HASH')
-SESSION_NAME = config.get('pyrogram', 'SESSION_NAME')
-SYSTEM_PROMPT = config.get('g4f', 'SYSTEM_PROMPT')
-
-
-DOWNLOAD_PATH = "downloads"
-PATTERN = re.compile(r"Устройство: (.+?);.*?IP: (\d+\.\d+\.\d+\.\d+);")
-
-app = Client(SESSION_NAME, api_id=API_ID, api_hash=API_HASH)
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-allowed_user_ids = [906893530, 1008114300, 5547028370, 6690844057, -1002170215858]
 
 # пользовательский фильтр
 @filters.create
@@ -66,46 +52,64 @@ async def id_handler(_, message):
 
 @app.on_message(filters.command("гпт", prefixes="."))
 async def gpt_handler(_, message):
+    user_id = message.from_user.id
+    us = user_choise[user_id] = 'meta'
     req_text = message.text.split(".гпт ", maxsplit=1)[1]
     if len(message.text.split(' ')) <= 1:
         return await message.reply_text('Укажите запрос', quote=True)
     msg = await message.reply('Генерация...')
-    await message.reply(gemini_response(req_text), quote=True)
+    if us == 'meta': 
+        await message.reply(meta_response(message.text))
+    elif us == 'gemini': 
+        await message.reply(gemini_response(message.text))
+    elif us == 'g4f':
+        await message.reply(g4f_response(message.text))
+    # await message.reply(g4f_response(req_text), quote=True)
     await app.delete_messages(msg.chat.id, msg.id)
 
 
-@app.on_message(filters.private & ~filters.me)
-async def message_handler(_, message):
-    try:
-        username = message.from_user.username if message.from_user.username else 'Неизвестный пользователь'
-        message_text = message.text if message.text else '[Нет текста]'
-        print(f'Новое сообщение от {username}: {message_text}')
-        text = message.text.lower()
-        
-        with open('userbot_log.txt', 'a', encoding='utf-8') as f:
-            f.write(f'{username}: {message_text} datetime:{message.date}\n')
+@app.on_message(filters.command(["q", "quote"], prefixes='.') & filters.me)
+@with_reply
+async def handle_sq_command(client, message):
+    reply = message.reply_to_message
 
-        if message.text.startswith('/start'):
-            await message.reply_text('👋 Привет! Тута')
-       
-        else:
-            if 'привет' in text:
-                await message.reply_text('Привет! Как дела? 😊')
+    if not reply:
+        await message.reply("❗️ Пожалуйста, ответьте на сообщение.")
+        return
 
-    except Exception as e:
-        print(f'❌ Произошла ошибка: {e}')
+    # Извлекаем текст из ответного сообщения
+    message_text = reply.text or "Нет текста для цитаты"
+    print(message_text)
+    # Подготовка данных для API запроса
+    api_url = "https://quotes.fl1yd.su/generate"
+    payload = {
+        "messages": [
+            {
+                "text": message_text,
+                "author": {
+                    "id": reply.from_user.id,  # Добавляем поле id автора
+                    "name": reply.from_user.first_name,
+                },
+                # Поле reply как словарь с минимальной информацией
+                "reply": {
+                    "id": message.id,
+                    "text": message.text or "Нет текста в ответе"
+                }
+            }
+        ],
+        "quote_color": "#162330",
+        "text_color": "#fff",
+    }
 
+    # Отправка запроса на API для генерации цитаты
+    response = requests.post(api_url, json=payload)
 
-@app.on_message(filters.text & user_filter) 
-async def extract_device_ip(_, message):
-    match = PATTERN.search(message.text)
-    if match:
-        device_name = match.group(1)  
-        ip_address = match.group(2) 
-        
-        print(f"Название устройства: {device_name}, IP-адрес: {ip_address}")
-        await message.reply(get_store_by_ip(ip_address))
-
+    if response.status_code == 200:
+        quote_image = io.BytesIO(response.content)
+        quote_image.name = "quote.webp"
+        await message.reply_document(document=quote_image)
+    else:
+        await message.reply("❗️ Ошибка при создании цитаты.")
 
 
 print('starting')
